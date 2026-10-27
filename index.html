@@ -1,0 +1,897 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex, nofollow">
+<title>G Club Availability</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400..700&display=swap">
+<style>
+/* Layout: one calm column. Summary first (best dates), then the member's own reply, then the full roster matrix.
+   Colour is reserved for availability (free / maybe / can't). Everything else is ink on cool paper. */
+:root{
+  color-scheme:light;
+  --bg:#F1F3F0; --surface:#FFFFFF; --sunken:#E5E9E4; --ink:#14201B; --ink-2:#4A5851; --line:#D3D9D2; --on-ink:#F1F3F0;
+  --free:#0B7452; --free-bg:#D5EFE3;
+  --maybe:#8F5B00; --maybe-bg:#FAE9C2; --maybe-fill:#E0A526;
+  --no:#A33F3F; --no-bg:#F5DADA;
+  --focus:#2B55F5;
+  --font-display:'Bricolage Grotesque','Avenir Next','Helvetica Neue',Arial,sans-serif;
+  --font-body:'Instrument Sans','Helvetica Neue',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme:dark;
+    --bg:#0F1613; --surface:#17211C; --sunken:#1F2B25; --ink:#E9EFEB; --ink-2:#9DADA4; --line:#2C3A33; --on-ink:#0F1613;
+    --free:#58D3A2; --free-bg:#12392B;
+    --maybe:#F2BE55; --maybe-bg:#3C2E10; --maybe-fill:#E0A526;
+    --no:#EA9A9A; --no-bg:#412626;
+    --focus:#8EA6FF;
+  }
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 var(--font-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:20px 64px;
+}
+.wrap{max-width:1040px; margin:0 auto; display:flex; flex-direction:column; gap:28px}
+h1,h2{font-family:var(--font-display); margin:0; letter-spacing:-.02em; line-height:1.1; text-wrap:balance}
+h1{font-size:clamp(30px,6vw,52px); font-weight:700}
+h2{font-size:22px; font-weight:650}
+p{margin:0}
+button{font:inherit; color:inherit}
+:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+
+/* hero */
+.hero{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:20px 32px; align-items:end; padding-bottom:24px; border-bottom:1px solid var(--line)}
+@media (max-width:640px){ .hero{grid-template-columns:minmax(0,1fr)} }
+.eyebrow{font-size:12px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-2); margin-bottom:12px}
+.blurb{max-width:60ch; color:var(--ink-2); margin-top:12px}
+.facts{display:flex; flex-wrap:wrap; gap:10px 32px; margin:18px 0 0; padding:0; list-style:none}
+.facts li{display:flex; flex-direction:column; gap:2px; min-width:0}
+.facts .k{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2); font-weight:600}
+.facts .v{font-weight:550; overflow-wrap:anywhere}
+.hero-actions{margin-top:16px; display:flex; flex-wrap:wrap; gap:8px}
+.stat{min-width:150px}
+.stat .big{font:700 clamp(44px,8vw,68px)/1 var(--font-display); letter-spacing:-.03em; font-variant-numeric:tabular-nums}
+.stat .big small{font-size:.42em; color:var(--ink-2); font-weight:600; letter-spacing:0}
+.stat .lbl{color:var(--ink-2); font-size:13px; margin-top:4px}
+.meter{height:6px; border-radius:99px; background:var(--sunken); overflow:hidden; margin-top:10px}
+.meter>span{display:block; height:100%; background:var(--free); border-radius:99px}
+
+/* date tile: weekday, day, month. Weekend weekday label is set darker. */
+.dt{display:inline-flex; flex-direction:column; align-items:center; justify-content:center; width:56px; flex:none; padding:7px 0 8px; border:1px solid var(--line); border-radius:10px; background:var(--surface); line-height:1}
+.dt-wd{font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2); font-weight:600}
+.dt.we .dt-wd{color:var(--ink)}
+.dt-d{font:700 24px/1.05 var(--font-display); margin:3px 0 2px; font-variant-numeric:tabular-nums}
+.dt-m{font-size:11px; color:var(--ink-2); font-weight:600}
+.dt.sm{width:48px; padding:6px 0 7px}
+.dt.sm .dt-d{font-size:20px}
+
+/* banners */
+#banner{display:flex; flex-direction:column; gap:8px}
+#banner:empty{display:none}
+.note{padding:12px 14px; border-radius:10px; border:1px solid var(--line); background:var(--surface); font-size:14px}
+.note.warn{background:var(--no-bg); border-color:var(--no); color:var(--ink)}
+.note.ok{background:var(--free-bg); border-color:var(--free); color:var(--ink)}
+.note.info{background:var(--sunken)}
+.note.lock{background:var(--free); border-color:var(--free); color:var(--bg); font-size:15px}
+.note.lock strong{font-weight:700}
+
+/* panels and forms */
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:20px}
+.lede{color:var(--ink-2); margin:6px 0 16px}
+.field{display:flex; flex-direction:column; gap:6px; margin:14px 0 0; min-width:0}
+.field>span,.label{font-size:13px; font-weight:600}
+input[type=text],textarea{width:100%; font:inherit; font-size:16px; padding:10px 12px; border:1px solid var(--line); border-radius:9px; background:var(--bg); color:var(--ink); min-width:0}
+textarea{resize:vertical}
+input::placeholder,textarea::placeholder{color:var(--ink-2); opacity:.75}
+.hint{font-size:13px; color:var(--ink-2); min-height:20px; margin-top:6px}
+.btn{font-weight:600; padding:11px 18px; border-radius:10px; border:1px solid var(--ink); background:transparent; cursor:pointer}
+.btn.primary{background:var(--ink); color:var(--on-ink)}
+.btn.small{padding:7px 12px; font-size:13px}
+.btn:disabled{opacity:.5; cursor:not-allowed}
+.link{background:none; border:0; padding:0; text-decoration:underline; text-underline-offset:3px; cursor:pointer; color:var(--ink-2); font-size:13px}
+.actions{display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; margin-top:20px}
+.msg{font-size:14px; color:var(--ink-2)}
+.msg.ok{color:var(--free)}
+.msg.err{color:var(--no)}
+
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{display:inline-flex; align-items:center; gap:6px; padding:7px 13px; border-radius:99px; border:1px solid var(--line); background:var(--bg); cursor:pointer}
+.chip .tick{display:none; color:var(--free); font-size:12px}
+.chip.done .tick{display:inline}
+.chip[aria-pressed="true"]{background:var(--ink); color:var(--on-ink); border-color:var(--ink)}
+.chip[aria-pressed="true"] .tick{color:var(--on-ink)}
+
+.bulk{display:flex; gap:16px; margin:18px 0 8px}
+.rows{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px}
+.row{display:flex; align-items:center; gap:12px}
+.seg{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; flex:1; min-width:0}
+.seg button{display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:44px; padding:8px 4px; border-radius:9px; border:1px solid var(--line); background:var(--bg); color:var(--ink-2); font-weight:550; cursor:pointer}
+.seg button i{font-style:normal; font-size:13px}
+.seg button[aria-checked="true"][data-v="y"]{background:var(--free-bg); border-color:var(--free); color:var(--free)}
+.seg button[aria-checked="true"][data-v="m"]{background:var(--maybe-bg); border-color:var(--maybe); color:var(--maybe)}
+.seg button[aria-checked="true"][data-v="n"]{background:var(--no-bg); border-color:var(--no); color:var(--no)}
+
+/* best dates */
+.section-head{display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px 16px}
+.best{display:grid; grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr)); gap:12px; list-style:none; margin:14px 0 0; padding:0}
+.best li{display:flex; gap:14px; padding:14px; border:1px solid var(--line); border-radius:12px; background:var(--surface); min-width:0}
+.best li.top{border-color:var(--free); box-shadow:inset 0 0 0 1px var(--free)}
+.best-body{min-width:0; flex:1}
+.best-line{font-weight:650}
+.counts{color:var(--ink-2)}
+.bar{display:flex; height:8px; border-radius:99px; overflow:hidden; background:var(--sunken); margin:8px 0 6px}
+.bar .y{background:var(--free)} .bar .m{background:var(--maybe-fill)} .bar .n{background:var(--no)}
+.sub{font-size:13px; color:var(--ink-2); overflow-wrap:anywhere}
+.tag{display:inline-block; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:2px 7px; border-radius:6px; background:var(--free); color:var(--bg); margin-left:6px; vertical-align:2px}
+
+/* matrix */
+.legend{display:flex; flex-wrap:wrap; gap:6px 18px; list-style:none; padding:0; margin:12px 0; font-size:13px; color:var(--ink-2)}
+.legend li{display:flex; align-items:center; gap:6px}
+.matrix-wrap{position:relative; overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface)}
+table.matrix{border-collapse:separate; border-spacing:0; min-width:100%}
+.matrix th,.matrix td{padding:8px 10px; border-bottom:1px solid var(--line); text-align:center; vertical-align:middle}
+.matrix tbody tr:last-child>*{border-bottom:0}
+.matrix thead th{vertical-align:top; padding-top:12px; min-width:92px}
+.matrix .who{position:sticky; left:0; z-index:1; background:var(--surface); text-align:left; min-width:130px; max-width:190px; border-right:1px solid var(--line); font-weight:550}
+.matrix .who .nm{display:block; overflow-wrap:anywhere}
+.matrix .wait .who{color:var(--ink-2); font-weight:450}
+.matrix .wait td{color:var(--ink-2); font-size:13px; text-align:left; font-style:italic}
+.matrix .best-col{background:color-mix(in srgb, var(--free-bg) 45%, transparent)}
+.matrix thead th .dt{display:flex; margin:0 auto 8px}
+.tally{display:flex; justify-content:center; gap:3px}
+.tally span{min-width:22px; padding:1px 4px; border-radius:5px; font-size:12px; font-weight:650; font-variant-numeric:tabular-nums}
+.tally .ty{background:var(--free-bg); color:var(--free)}
+.tally .tm{background:var(--maybe-bg); color:var(--maybe)}
+.tally .tn{background:var(--no-bg); color:var(--no)}
+.matrix .mini{margin-top:8px; font-size:12px; padding:4px 8px; border-radius:7px; border:1px solid var(--line); background:var(--bg); cursor:pointer}
+.cell{display:inline-grid; place-items:center; width:30px; height:30px; border-radius:8px; font-weight:700; font-size:14px}
+.cell.y{background:var(--free-bg); color:var(--free)}
+.cell.m{background:var(--maybe-bg); color:var(--maybe)}
+.cell.n{background:var(--no-bg); color:var(--no)}
+.cell.u{border:1px dashed var(--line); color:var(--ink-2); font-weight:400}
+.notes{list-style:none; margin:16px 0 0; padding:0; display:flex; flex-direction:column; gap:6px; font-size:14px}
+.notes strong{font-weight:650}
+.notes span{color:var(--ink-2); overflow-wrap:anywhere}
+#copy-box,#link-box{margin-top:12px; font-size:14px}
+
+/* setup */
+.setup-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr)); gap:8px 32px}
+.two{display:grid; grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr)); gap:0 12px}
+.cal{max-width:360px; margin-top:8px}
+.cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px}
+.cal-head button{width:36px; height:36px; border-radius:9px; border:1px solid var(--line); background:var(--bg); cursor:pointer; font-size:18px; line-height:1}
+.cal-head button:disabled{opacity:.35; cursor:default}
+.cal-grid{display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px}
+.cal-wd{font-size:11px; text-align:center; color:var(--ink-2); padding:4px 0; font-weight:600; letter-spacing:.06em; text-transform:uppercase}
+.cal-day{aspect-ratio:1; max-width:100%; border-radius:8px; border:1px solid transparent; background:var(--bg); cursor:pointer; font-variant-numeric:tabular-nums}
+.cal-day.we{background:var(--sunken)}
+.cal-day.sel{background:var(--ink); color:var(--on-ink)}
+.cal-day:disabled{opacity:.3; cursor:default}
+.picked{list-style:none; margin:14px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:6px}
+.picked li{display:inline-flex; align-items:center; gap:4px; padding:3px 4px 3px 10px; border-radius:99px; background:var(--sunken); font-size:13px; font-weight:550}
+.picked button{border:0; background:none; cursor:pointer; width:24px; height:24px; border-radius:99px; font-size:16px; line-height:1; color:var(--ink-2)}
+.empty h2{margin-bottom:6px}
+
+/* footer */
+.foot{border-top:1px solid var(--line); padding-top:18px; font-size:13px; color:var(--ink-2); display:flex; flex-direction:column; gap:10px}
+.foot:empty{display:none}
+.foot-row{display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center}
+.foot-row strong{color:var(--ink)}
+.foot input[type=text]{max-width:440px; font-size:14px}
+
+@media (prefers-reduced-motion:no-preference){ .meter>span{transition:width .3s ease} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero" id="hero">
+    <div>
+      <p class="eyebrow">Availability check</p>
+      <h1>G Club gathering</h1>
+      <p class="blurb">Loading dates and replies…</p>
+    </div>
+  </header>
+  <div id="banner" role="status" aria-live="polite"></div>
+  <section id="setup" class="panel" hidden aria-labelledby="setup-h"></section>
+  <section id="empty" hidden></section>
+  <section id="best" hidden aria-labelledby="best-h"></section>
+  <section id="reply" class="panel" hidden aria-labelledby="reply-h"></section>
+  <section id="results" hidden aria-labelledby="results-h"></section>
+  <footer class="foot" id="foot"></footer>
+  <noscript><div class="note warn">This page needs JavaScript to show the dates and replies.</div></noscript>
+</div>
+
+<script src="config.js"></script>
+<script>
+(() => {
+'use strict';
+
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2, '0');
+const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const F_WD = new Intl.DateTimeFormat('en-GB', {weekday:'short'});
+const F_MON = new Intl.DateTimeFormat('en-GB', {month:'short'});
+const F_LONG = new Intl.DateTimeFormat('en-GB', {weekday:'long', day:'numeric', month:'long'});
+const F_SHORT = new Intl.DateTimeFormat('en-GB', {weekday:'short', day:'numeric', month:'short'});
+const F_MY = new Intl.DateTimeFormat('en-GB', {month:'long', year:'numeric'});
+const WD = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const ANS = {y:['Free','✓'], m:['Maybe','?'], n:["Can't",'✕']};
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v){ try { localStorage.setItem(k, v); } catch (e) {} }
+};
+
+/* Reply keys are a stable ascii fold of the name, so "Alex  Tan" and "alex tan" are one person. */
+function slugify(name){
+  const s = String(name).normalize('NFKC').trim().toLowerCase().replace(/\s+/g, ' ');
+  let out = '';
+  for (const ch of s){
+    if (/[a-z0-9]/.test(ch)) out += ch;
+    else if (ch === ' ') out += '-';
+    else out += '_' + ch.codePointAt(0).toString(16) + '_';
+  }
+  return out.slice(0, 190) || 'x';
+}
+
+/* ---------- server calls ---------- */
+const CFG = window.GCLUB || {};
+const CONFIGURED = !!(CFG.url && CFG.key && CFG.event && !/YOUR-/.test(CFG.url + CFG.key));
+async function rpc(fn, args){
+  const res = await fetch(CFG.url.replace(/\/$/, '') + '/rest/v1/rpc/' + fn, {
+    method:'POST', cache:'no-store',
+    headers:{'apikey':CFG.key, 'Content-Type':'application/json'},
+    body:JSON.stringify(args)
+  });
+  let body = null;
+  try { body = await res.json(); } catch (e) {}
+  if (!res.ok){
+    const err = new Error((body && body.message) || 'Request failed');
+    err.code = (body && body.message) || 'http_' + res.status;
+    throw err;
+  }
+  return body;
+}
+const ERR_TEXT = {
+  not_admin:'Only the organiser can do that. Open the organiser link on this device first.',
+  event_full:'This gathering has reached its limit of replies. Tell the organiser.',
+  bad_name:'Use a name between 1 and 40 characters.',
+  no_answers:'Mark at least one of the listed dates.',
+  no_such_event:'This gathering does not exist.'
+};
+const errText = e => ERR_TEXT[e && e.code] || 'Could not save. Check your connection and try again.';
+
+/* ---------- state ---------- */
+const S = {
+  key:'', admin:false, loaded:false, offline:false, missing:false, unconfigured:false,
+  cfg:null, cfgReady:false, people:[], peopleReady:false, err:'', flash:'',
+  me:{name:'', id:'', answers:{}, note:'', dirty:false, existing:false, saving:false, loadedAt:0, confirmDel:false},
+  replySig:'', restored:false, footSig:'', orgForm:false, linkFallback:'', footMsg:'',
+  setupOpen:false, setupTouched:false, draft:null, cal:null, savingCfg:false,
+  copyFallback:'', lastSig:''
+};
+const cfgDates = () => (S.cfg && Array.isArray(S.cfg.dates)) ? S.cfg.dates.slice().sort() : [];
+const cfgRoster = () => (S.cfg && Array.isArray(S.cfg.roster)) ? S.cfg.roster : [];
+
+function tally(){
+  const t = {};
+  const dates = cfgDates();
+  dates.forEach(d => { t[d] = {y:0, m:0, n:0}; });
+  S.people.forEach(p => dates.forEach(d => {
+    const v = p.answers && p.answers[d];
+    if (v === 'y' || v === 'm' || v === 'n') t[d][v]++;
+  }));
+  return t;
+}
+function ranked(t){
+  return cfgDates().sort((a, b) => t[b].y - t[a].y || t[b].m - t[a].m || t[a].n - t[b].n || (a < b ? -1 : 1));
+}
+function counts(){
+  const roster = cfgRoster();
+  const extras = S.people.filter(p => !roster.some(r => slugify(r) === p.id)).length;
+  return {replied:S.people.length, total:roster.length + extras, hasRoster:roster.length > 0};
+}
+function tile(d, sm){
+  const dt = parse(d), dow = dt.getDay();
+  return `<span class="dt${dow === 0 || dow === 6 ? ' we' : ''}${sm ? ' sm' : ''}" title="${esc(F_LONG.format(dt))}"><span class="dt-wd">${F_WD.format(dt)}</span><span class="dt-d">${dt.getDate()}</span><span class="dt-m">${F_MON.format(dt)}</span></span>`;
+}
+function nameList(list){
+  return esc(list.slice(0, 4).join(', ')) + (list.length > 4 ? ` +${list.length - 4}` : '');
+}
+const memberLink = () => location.origin + location.pathname;
+
+/* ---------- hero, banner, empty ---------- */
+function renderHero(){
+  const c = S.cfg;
+  const title = (c && c.title) || 'G Club gathering';
+  const facts = [];
+  if (c && c.when) facts.push(['When', c.when]);
+  if (c && c.where) facts.push(['Where', c.where]);
+  const n = counts();
+  let stat = '';
+  if (S.cfgReady && cfgDates().length){
+    stat = n.hasRoster
+      ? `<div class="stat"><div class="big">${n.replied}<small>/${n.total}</small></div><div class="lbl">members replied</div><div class="meter"><span style="width:${n.total ? Math.round(n.replied / n.total * 100) : 0}%"></span></div></div>`
+      : `<div class="stat"><div class="big">${n.replied}</div><div class="lbl">${n.replied === 1 ? 'reply' : 'replies'} so far</div></div>`;
+  }
+  let blurb = '';
+  if (c && c.blurb) blurb = `<p class="blurb">${esc(c.blurb)}</p>`;
+  else if (!S.loaded && !S.offline && !S.unconfigured) blurb = '<p class="blurb">Loading dates and replies…</p>';
+  $('#hero').innerHTML = `<div><p class="eyebrow">Availability check</p><h1>${esc(title)}</h1>${blurb}` +
+    (facts.length ? `<ul class="facts">${facts.map(f => `<li><span class="k">${f[0]}</span><span class="v">${esc(f[1])}</span></li>`).join('')}</ul>` : '') +
+    (S.admin && S.cfgReady && cfgDates().length && !S.setupOpen ? '<p class="hero-actions"><button type="button" class="btn small" id="edit-setup">Edit gathering</button><button type="button" class="btn small" id="copy-member">Copy member link</button></p>' : '') +
+    `</div>${stat}`;
+}
+function renderBanner(){
+  const out = [];
+  if (S.unconfigured) out.push('<div class="note warn">This page is not connected to its database yet. Fill in config.js and reload.</div>');
+  if (S.offline) out.push('<div class="note warn">Could not load the gathering. Check your connection. This page will keep trying.</div>');
+  if (S.missing) out.push('<div class="note warn">This gathering does not exist. Check the link you were sent.</div>');
+  if (S.err) out.push(`<div class="note warn">${esc(S.err)}</div>`);
+  if (S.flash) out.push(`<div class="note ok">${esc(S.flash)}</div>`);
+  if (S.cfg && S.cfg.confirmed && cfgDates().includes(S.cfg.confirmed)) out.push(`<div class="note lock"><strong>Locked in:</strong> ${esc(F_LONG.format(parse(S.cfg.confirmed)))}</div>`);
+  $('#banner').innerHTML = out.join('');
+}
+function renderEmpty(){
+  const el = $('#empty');
+  if (!S.loaded || S.missing || cfgDates().length || S.admin){ el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = '<div class="panel empty"><h2>Dates are coming</h2><p class="lede" style="margin-bottom:0">The organiser has not posted any dates yet. Check back soon and mark the ones that work for you.</p></div>';
+}
+function flash(msg){
+  S.flash = msg; renderBanner();
+  clearTimeout(flash.t);
+  flash.t = setTimeout(() => { S.flash = ''; renderBanner(); }, 6000);
+}
+
+/* ---------- best dates ---------- */
+function renderBest(){
+  const el = $('#best');
+  const dates = cfgDates();
+  if (!S.cfgReady || !dates.length || !S.people.length){ el.hidden = true; el.innerHTML = ''; return; }
+  const t = tally();
+  const top = ranked(t).filter(d => t[d].y + t[d].m > 0).slice(0, 3);
+  if (!top.length){ el.hidden = true; el.innerHTML = ''; return; }
+  const cards = top.map((d, i) => {
+    const x = t[d];
+    const nos = S.people.filter(p => p.answers && p.answers[d] === 'n').map(p => p.name);
+    const maybes = S.people.filter(p => p.answers && p.answers[d] === 'm').map(p => p.name);
+    const subs = [];
+    if (nos.length) subs.push(`Can't: ${nameList(nos)}`);
+    if (maybes.length) subs.push(`Maybe: ${nameList(maybes)}`);
+    if (!subs.length && x.y === S.people.length) subs.push('Everyone who has replied is free.');
+    return `<li class="${i === 0 ? 'top' : ''}">${tile(d)}<div class="best-body">` +
+      `<div class="best-line">${esc(F_LONG.format(parse(d)))}${i === 0 ? '<span class="tag">Best</span>' : ''}</div>` +
+      `<div class="bar" role="img" aria-label="${x.y} free, ${x.m} maybe, ${x.n} can't"><span class="y" style="flex:${x.y}"></span><span class="m" style="flex:${x.m}"></span><span class="n" style="flex:${x.n}"></span></div>` +
+      `<div class="counts">${x.y} free · ${x.m} maybe · ${x.n} can't</div>` +
+      (subs.length ? `<p class="sub">${subs.join(' · ')}</p>` : '') + `</div></li>`;
+  }).join('');
+  el.hidden = false;
+  el.innerHTML = `<div class="section-head"><h2 id="best-h">Best dates so far</h2></div><ol class="best">${cards}</ol>`;
+}
+
+/* ---------- reply form ---------- */
+function rowHtml(d){
+  const label = esc(F_LONG.format(parse(d)));
+  const btn = v => `<button type="button" role="radio" aria-checked="false" data-v="${v}"><i aria-hidden="true">${ANS[v][1]}</i>${ANS[v][0]}</button>`;
+  return `<li class="row" data-date="${d}">${tile(d)}<div class="seg" role="radiogroup" aria-label="Availability on ${label}">${btn('y')}${btn('m')}${btn('n')}</div></li>`;
+}
+function setPerson(raw){
+  const name = String(raw || '').trim().slice(0, 40);
+  const id = name ? slugify(name) : '';
+  const ex = id && S.people.find(p => p.id === id);
+  Object.assign(S.me, {
+    name, id, answers: ex ? {...ex.answers} : {}, note: ex ? ex.note : '',
+    existing: !!ex, loadedAt: ex ? ex.updatedAt : 0, dirty:false, confirmDel:false
+  });
+}
+function selectPerson(name){
+  setPerson(name);
+  if (S.me.name) store.set('gclub.name', S.me.name);
+  renderReply();
+}
+function renderReply(){
+  const el = $('#reply');
+  const dates = cfgDates();
+  if (!S.cfgReady || !dates.length){ el.hidden = true; el.innerHTML = ''; return; }
+  const roster = cfgRoster();
+  el.hidden = false;
+  el.innerHTML =
+    `<h2 id="reply-h">Your availability</h2>` +
+    `<p class="lede">${roster.length ? 'Tap your name, then mark each date.' : 'Enter your name, then mark each date.'}</p>` +
+    (roster.length ? `<div class="chips" id="chips" role="group" aria-label="Pick your name">${roster.map(n => `<button type="button" class="chip" data-slug="${esc(slugify(n))}" data-name="${esc(n)}" aria-pressed="false">${esc(n)}<span class="tick" aria-hidden="true">✓</span></button>`).join('')}</div>` : '') +
+    `<label class="field"><span>${roster.length ? 'Not on the list? Type your name' : 'Your name'}</span><input id="who" type="text" maxlength="40" autocomplete="name"></label>` +
+    `<p class="hint" id="existing-note" aria-live="polite"></p>` +
+    `<div class="bulk"><button type="button" class="link" data-bulk="y">Mark all free</button><button type="button" class="link" data-bulk="clear">Clear all</button></div>` +
+    `<ul class="rows" id="rows">${dates.map(rowHtml).join('')}</ul>` +
+    `<label class="field"><span>Anything we should know? (optional)</span><textarea id="note" rows="2" maxlength="280" placeholder="e.g. Evenings only. Flying back on the 12th."></textarea></label>` +
+    `<div class="actions"><button type="button" class="btn primary" id="save">Save my availability</button>` +
+    (S.admin && S.me.existing ? '<button type="button" class="link" id="del">Remove this reply</button>' : '') +
+    `<span class="msg" id="save-msg" role="status" aria-live="polite"></span></div>`;
+  $('#who').value = S.me.name;
+  $('#note').value = S.me.note;
+  $$('#rows .row').forEach(paintRow);
+  updateChips();
+}
+function paintRow(row){
+  const v = S.me.answers[row.dataset.date];
+  $$('.seg button', row).forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === v)));
+}
+function existingHint(){
+  if (!S.me.id) return '';
+  const ex = S.people.find(p => p.id === S.me.id);
+  if (!ex) return '';
+  return S.me.dirty
+    ? `${ex.name} already has a saved reply. Saving will replace it.`
+    : `Showing ${ex.name}'s saved reply. Change anything and save to update it.`;
+}
+function updateChips(){
+  const done = new Set(S.people.map(p => p.id));
+  $$('#chips .chip').forEach(c => {
+    c.classList.toggle('done', done.has(c.dataset.slug));
+    c.setAttribute('aria-pressed', String(c.dataset.slug === S.me.id));
+  });
+  const h = $('#existing-note');
+  if (h) h.textContent = existingHint();
+}
+function setMsg(text, kind){
+  const m = $('#save-msg');
+  if (!m) return;
+  m.textContent = text || '';
+  m.className = 'msg' + (kind ? ' ' + kind : '');
+}
+function nameCommitted(input){
+  const v = input.value.trim().slice(0, 40);
+  const id = v ? slugify(v) : '';
+  if (id === S.me.id){ S.me.name = v; return; }
+  if (S.me.dirty){
+    S.me.name = v; S.me.id = id; S.me.existing = S.people.some(p => p.id === id);
+    updateChips();
+    return;
+  }
+  selectPerson(v);
+}
+function setAnswer(btn){
+  const row = btn.closest('.row');
+  const d = row.dataset.date, v = btn.dataset.v;
+  if (S.me.answers[d] === v) delete S.me.answers[d]; else S.me.answers[d] = v;
+  S.me.dirty = true;
+  paintRow(row);
+  setMsg('');
+  updateChips();
+}
+function bulk(kind){
+  cfgDates().forEach(d => { if (kind === 'y') S.me.answers[d] = 'y'; else delete S.me.answers[d]; });
+  S.me.dirty = true;
+  $$('#rows .row').forEach(paintRow);
+  setMsg('');
+  updateChips();
+}
+function dropStaleKey(e){
+  if (e && e.code === 'not_admin'){
+    S.key = ''; S.admin = false; store.set('gclub.admin', '');
+    renderAll();
+  }
+}
+async function saveReply(){
+  if (S.me.saving) return;
+  const name = (S.me.name || '').trim().slice(0, 40);
+  if (!name){ setMsg('Add your name first.', 'err'); const w = $('#who'); if (w) w.focus(); return; }
+  const dateSet = new Set(cfgDates());
+  const answers = {};
+  Object.keys(S.me.answers).forEach(d => { if (dateSet.has(d) && ANS[S.me.answers[d]]) answers[d] = S.me.answers[d]; });
+  if (!Object.keys(answers).length){ setMsg('Mark at least one date.', 'err'); return; }
+  const id = slugify(name);
+  S.me.id = id; S.me.saving = true;
+  const b = $('#save'); if (b) b.disabled = true;
+  setMsg('Saving…');
+  try {
+    await rpc('gc_submit', {p_event:CFG.event, p_slug:id, p_name:name, p_answers:answers, p_note:(S.me.note || '').trim().slice(0, 280)});
+    S.me.name = name; S.me.dirty = false; S.me.existing = true;
+    store.set('gclub.name', name);
+    await refresh(true);
+    updateChips();
+    setMsg(`Saved. Thanks, ${name}.`, 'ok');
+  } catch (e) {
+    setMsg(errText(e), 'err');
+  } finally {
+    S.me.saving = false;
+    const b2 = $('#save'); if (b2) b2.disabled = false;
+  }
+}
+async function delReply(btn){
+  if (!S.me.id) return;
+  if (!S.me.confirmDel){
+    S.me.confirmDel = true; btn.textContent = 'Tap again to remove';
+    setTimeout(() => { if (S.me.confirmDel && btn.isConnected){ S.me.confirmDel = false; btn.textContent = 'Remove this reply'; } }, 4000);
+    return;
+  }
+  try {
+    await rpc('gc_remove', {p_event:CFG.event, p_admin:S.key, p_slug:S.me.id});
+    setPerson('');
+    await refresh(true);
+    renderReply();
+    setMsg('Reply removed.', 'ok');
+  } catch (e) { setMsg(errText(e), 'err'); dropStaleKey(e); }
+}
+function editPerson(id){
+  const p = S.people.find(x => x.id === id);
+  if (!p) return;
+  selectPerson(p.name);
+  const r = $('#reply');
+  if (r && r.scrollIntoView) r.scrollIntoView({behavior:'smooth', block:'start'});
+}
+/* Keep the form in step with the data without clobbering what someone is typing. */
+function syncReply(){
+  const dates = cfgDates();
+  if (!S.cfgReady || !dates.length){ S.replySig = ''; renderReply(); return; }
+  if (!S.restored && S.peopleReady){
+    S.restored = true;
+    const saved = store.get('gclub.name');
+    if (saved){ setPerson(saved); S.replySig = ''; }
+  }
+  const sig = JSON.stringify([dates, cfgRoster(), S.admin]);
+  if (sig !== S.replySig){ S.replySig = sig; renderReply(); return; }
+  const ae = document.activeElement;
+  const typing = ae && (ae.id === 'who' || ae.id === 'note');
+  if (S.me.id && !S.me.dirty && !typing){
+    const ex = S.people.find(p => p.id === S.me.id);
+    if (ex && ex.updatedAt !== S.me.loadedAt){ setPerson(S.me.name); renderReply(); return; }
+    if (!ex && S.me.existing){ setPerson(S.me.name); renderReply(); return; }
+  }
+  updateChips();
+}
+
+/* ---------- results matrix ---------- */
+function cellHtml(v, best){
+  const cls = best ? ' class="best-col"' : '';
+  if (ANS[v]) return `<td${cls}><span class="cell ${v}" title="${ANS[v][0]}"><span aria-hidden="true">${ANS[v][1]}</span><span class="sr">${ANS[v][0]}</span></span></td>`;
+  return `<td${cls}><span class="cell u" title="No answer"><span aria-hidden="true">–</span><span class="sr">No answer</span></span></td>`;
+}
+function renderResults(){
+  const el = $('#results');
+  const dates = cfgDates();
+  if (!S.cfgReady || !dates.length){ el.hidden = true; el.innerHTML = ''; return; }
+  const t = tally(), rk = ranked(t);
+  const bestDate = S.people.length && t[rk[0]].y > 0 ? rk[0] : null;
+  const locked = S.cfg.confirmed;
+  const head = dates.map(d => {
+    const x = t[d];
+    const isLocked = locked === d;
+    let ctl = isLocked ? '<div><span class="tag" style="margin:0">Locked</span></div>' : '';
+    if (S.admin) ctl += `<div><button type="button" class="mini" data-lock="${d}">${isLocked ? 'Unlock' : 'Lock in'}</button></div>`;
+    return `<th scope="col"${d === bestDate ? ' class="best-col"' : ''}>${tile(d, true)}<div class="tally" title="${x.y} free, ${x.m} maybe, ${x.n} can't"><span class="ty">${x.y}</span><span class="tm">${x.m}</span><span class="tn">${x.n}</span></div>${ctl}</th>`;
+  }).join('');
+  const rows = S.people.map(p =>
+    `<tr><th scope="row" class="who"><span class="nm">${esc(p.name)}</span>${S.admin ? `<button type="button" class="link" data-edit="${esc(p.id)}">Edit</button>` : ''}</th>${dates.map(d => cellHtml(p.answers && p.answers[d], d === bestDate)).join('')}</tr>`
+  ).join('');
+  const waiting = cfgRoster().filter(r => !S.people.some(p => p.id === slugify(r)));
+  const waitRows = waiting.map(n =>
+    `<tr class="wait"><th scope="row" class="who"><span class="nm">${esc(n)}</span></th><td colspan="${dates.length}">No reply yet</td></tr>`
+  ).join('');
+  const notes = S.people.filter(p => p.note).map(p => `<li><strong>${esc(p.name)}</strong> <span>${esc(p.note)}</span></li>`).join('');
+  el.hidden = false;
+  el.innerHTML =
+    `<div class="section-head"><h2 id="results-h">Everyone's availability</h2>` +
+    (S.admin ? '<button type="button" class="btn small" id="copy">Copy summary for chat</button>' : '') + `</div>` +
+    `<ul class="legend"><li><span class="cell y" style="width:22px;height:22px;font-size:12px">✓</span>Free</li><li><span class="cell m" style="width:22px;height:22px;font-size:12px">?</span>Maybe</li><li><span class="cell n" style="width:22px;height:22px;font-size:12px">✕</span>Can't</li><li>Column totals: free · maybe · can't</li></ul>` +
+    (S.copyFallback ? `<textarea id="copy-box" rows="6" readonly aria-label="Summary to copy">${esc(S.copyFallback)}</textarea>` : '') +
+    (S.people.length || waiting.length
+      ? `<div class="matrix-wrap"><table class="matrix"><thead><tr><th scope="col" class="who"><span class="sr">Member</span></th>${head}</tr></thead><tbody>${rows}${waitRows}</tbody></table></div>`
+      : '<div class="panel empty"><h2>No replies yet</h2><p class="lede" style="margin-bottom:0">Be the first to mark your dates above.</p></div>') +
+    (notes ? `<ul class="notes" aria-label="Notes from members">${notes}</ul>` : '');
+}
+async function lockDate(d){
+  if (!S.cfg) return;
+  const next = S.cfg.confirmed === d ? null : d;
+  try {
+    await rpc('gc_lock', {p_event:CFG.event, p_admin:S.key, p_date:next});
+    await refresh(true);
+    flash(next ? 'Date locked in. Members will see it at the top of the page.' : 'Date unlocked.');
+  } catch (e) { flash(errText(e)); dropStaleKey(e); }
+}
+function summaryText(){
+  const t = tally(), rk = ranked(t), n = counts();
+  const roster = cfgRoster();
+  const lines = [];
+  lines.push(`${(S.cfg && S.cfg.title) || 'G Club gathering'}: availability so far`);
+  if (S.cfg && S.cfg.confirmed) lines.push(`Locked in: ${F_LONG.format(parse(S.cfg.confirmed))}`);
+  lines.push(n.hasRoster ? `${n.replied} of ${n.total} replied` : `${n.replied} replied`);
+  lines.push('');
+  rk.slice(0, 5).forEach((d, i) => { const x = t[d]; lines.push(`${i + 1}. ${F_SHORT.format(parse(d))}: ${x.y} free, ${x.m} maybe, ${x.n} can't`); });
+  const waiting = roster.filter(r => !S.people.some(p => p.id === slugify(r)));
+  if (waiting.length){ lines.push(''); lines.push('Still to reply: ' + waiting.join(', ')); }
+  lines.push(''); lines.push('Add yours: ' + memberLink());
+  return lines.join('\n');
+}
+async function copySummary(){
+  const text = summaryText();
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {}
+  if (ok){ S.copyFallback = ''; renderResults(); flash('Summary copied. Paste it into the group chat.'); }
+  else {
+    S.copyFallback = text; renderResults();
+    const box = $('#copy-box');
+    if (box){ box.focus(); box.select(); }
+  }
+}
+
+/* ---------- organiser setup ---------- */
+function openSetup(auto){
+  if (!S.admin) return;
+  const c = S.cfg || {};
+  S.draft = {
+    title:c.title || '', blurb:c.blurb || '', when:c.when || '', where:c.where || '',
+    roster:(Array.isArray(c.roster) ? c.roster : []).join('\n'),
+    dates:new Set(Array.isArray(c.dates) ? c.dates : [])
+  };
+  const now = new Date();
+  const first = cfgDates()[0];
+  let base = first ? parse(first) : now;
+  if (base < new Date(now.getFullYear(), now.getMonth(), 1)) base = now;
+  S.cal = {y:base.getFullYear(), m:base.getMonth()};
+  S.setupOpen = true; S.setupTouched = true;
+  renderSetup();
+  renderHero();
+  const el = $('#setup');
+  if (!auto && el.scrollIntoView) el.scrollIntoView({behavior:'smooth', block:'start'});
+}
+function closeSetup(){
+  S.setupOpen = false; S.setupTouched = true;
+  renderSetup(); renderHero();
+}
+function renderSetup(){
+  const el = $('#setup');
+  if (!S.setupOpen || !S.admin){ el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML =
+    `<h2 id="setup-h">Set up the gathering</h2>` +
+    `<p class="lede">Pick the dates you are considering. Members mark each one as free, maybe or can't.</p>` +
+    `<div class="setup-grid"><div>` +
+    `<label class="field" style="margin-top:0"><span>Name of the gathering</span><input id="s-title" type="text" maxlength="80" placeholder="G Club Mastermind"></label>` +
+    `<label class="field"><span>What it is (optional)</span><textarea id="s-blurb" rows="3" maxlength="400" placeholder="Catch up, get to know each other, swap ideas and find ways to work together."></textarea></label>` +
+    `<div class="two"><label class="field"><span>When (optional)</span><input id="s-when" type="text" maxlength="80" placeholder="Evening, 7pm to late"></label>` +
+    `<label class="field"><span>Where (optional)</span><input id="s-where" type="text" maxlength="80" placeholder="Venue to be confirmed"></label></div>` +
+    `<label class="field"><span>Member names, one per line (optional)</span><textarea id="s-roster" rows="6"></textarea></label>` +
+    `<p class="hint">Adding everyone lets this page show who has not replied yet.</p>` +
+    `</div><div><p class="label" style="margin-top:0">Dates you are considering</p><div class="cal" id="cal"></div><ul class="picked" id="picked" aria-label="Chosen dates"></ul></div></div>` +
+    `<div class="actions"><button type="button" class="btn primary" id="s-save">Save and open for replies</button><button type="button" class="btn" id="s-cancel">Cancel</button><span class="msg" id="s-msg" role="status" aria-live="polite"></span></div>`;
+  $('#s-title').value = S.draft.title;
+  $('#s-blurb').value = S.draft.blurb;
+  $('#s-when').value = S.draft.when;
+  $('#s-where').value = S.draft.where;
+  $('#s-roster').value = S.draft.roster;
+  renderCal();
+}
+function renderCal(focusSel){
+  const {y, m} = S.cal;
+  const first = new Date(y, m, 1);
+  const lead = (first.getDay() + 6) % 7;
+  const days = new Date(y, m + 1, 0).getDate();
+  const today = iso(new Date());
+  const now = new Date();
+  const atStart = y === now.getFullYear() && m === now.getMonth();
+  let cells = '';
+  for (let i = 0; i < lead; i++) cells += '<span></span>';
+  for (let d = 1; d <= days; d++){
+    const di = y + '-' + pad(m + 1) + '-' + pad(d);
+    const dow = new Date(y, m, d).getDay();
+    const sel = S.draft.dates.has(di);
+    cells += `<button type="button" class="cal-day${sel ? ' sel' : ''}${dow === 0 || dow === 6 ? ' we' : ''}" data-d="${di}" aria-pressed="${sel}" aria-label="${esc(F_LONG.format(new Date(y, m, d)))}"${di < today ? ' disabled' : ''}>${d}</button>`;
+  }
+  $('#cal').innerHTML =
+    `<div class="cal-head"><button type="button" data-nav="-1" aria-label="Previous month"${atStart ? ' disabled' : ''}>‹</button><strong>${F_MY.format(first)}</strong><button type="button" data-nav="1" aria-label="Next month">›</button></div>` +
+    `<div class="cal-grid" role="group" aria-label="${F_MY.format(first)}">${WD.map(w => `<span class="cal-wd">${w}</span>`).join('')}${cells}</div>`;
+  const list = [...S.draft.dates].sort();
+  $('#picked').innerHTML = list.length
+    ? list.map(d => `<li>${esc(F_SHORT.format(parse(d)))}<button type="button" data-rm="${d}" aria-label="Remove ${esc(F_LONG.format(parse(d)))}">×</button></li>`).join('')
+    : '<li style="padding-right:10px;color:var(--ink-2)">No dates picked yet</li>';
+  if (focusSel){ const f = $(focusSel); if (f && !f.disabled) f.focus(); }
+}
+function toggleDay(d){
+  if (S.draft.dates.has(d)) S.draft.dates.delete(d); else S.draft.dates.add(d);
+  renderCal(`#cal [data-d="${d}"]`);
+}
+function navCal(dir){
+  const dt = new Date(S.cal.y, S.cal.m + dir, 1);
+  S.cal = {y:dt.getFullYear(), m:dt.getMonth()};
+  renderCal(`#cal [data-nav="${dir}"]`);
+}
+function setupMsg(text, kind){
+  const m = $('#s-msg');
+  if (m){ m.textContent = text || ''; m.className = 'msg' + (kind ? ' ' + kind : ''); }
+}
+async function saveCfg(){
+  if (S.savingCfg || !S.draft) return;
+  const d = S.draft;
+  const dates = [...d.dates].sort();
+  if (!dates.length){ setupMsg('Pick at least one date on the calendar.', 'err'); return; }
+  const seen = new Set(), roster = [];
+  d.roster.split(/\r?\n|,/).map(s => s.trim().slice(0, 40)).filter(Boolean).forEach(n => {
+    const k = slugify(n);
+    if (!seen.has(k)){ seen.add(k); roster.push(n); }
+  });
+  const config = {
+    title:d.title.trim().slice(0, 80), blurb:d.blurb.trim().slice(0, 400),
+    when:d.when.trim().slice(0, 80), where:d.where.trim().slice(0, 80),
+    roster:roster.slice(0, 150), dates
+  };
+  S.savingCfg = true;
+  const b = $('#s-save'); if (b) b.disabled = true;
+  setupMsg('Saving…');
+  try {
+    await rpc('gc_save_event', {p_event:CFG.event, p_admin:S.key, p_config:config});
+    S.setupOpen = false;
+    await refresh(true);
+    renderSetup(); renderAll();
+    flash('Saved. Use "Copy member link" at the top to invite the club.');
+  } catch (e) {
+    setupMsg(errText(e), 'err');
+    dropStaleKey(e);
+  } finally {
+    S.savingCfg = false;
+    const b2 = $('#s-save'); if (b2) b2.disabled = false;
+  }
+}
+
+/* ---------- organiser sign-in and links ---------- */
+function renderFoot(){
+  const sig = JSON.stringify([S.loaded, S.admin, S.orgForm, S.linkFallback, S.footMsg]);
+  if (sig === S.footSig) return;
+  S.footSig = sig;
+  const el = $('#foot');
+  if (!S.loaded){ el.innerHTML = ''; return; }
+  if (S.admin){
+    el.innerHTML =
+      `<div class="foot-row"><strong>Organiser tools</strong><span>You are signed in on this device.</span></div>` +
+      `<div class="foot-row"><button type="button" class="btn small" id="copy-member">Copy member link</button><button type="button" class="btn small" id="copy-admin">Copy organiser link</button><button type="button" class="link" id="org-out">Sign out</button></div>` +
+      `<p>Share the member link with the club. Keep the organiser link private: anyone who has it can edit the gathering.</p>` +
+      (S.linkFallback ? `<input id="link-box" type="text" readonly aria-label="Link to copy">` : '');
+    const lb = $('#link-box'); if (lb){ lb.value = S.linkFallback; }
+  } else if (S.orgForm){
+    el.innerHTML =
+      `<label class="field" style="margin:0"><span>Organiser link or key</span><input id="org-key" type="text" autocomplete="off" spellcheck="false" placeholder="Paste your organiser link"></label>` +
+      `<div class="foot-row"><button type="button" class="btn small primary" id="org-go">Sign in</button><button type="button" class="link" id="org-cancel">Cancel</button><span class="msg err" id="foot-msg" role="status"></span></div>`;
+    const fm = $('#foot-msg'); if (fm) fm.textContent = S.footMsg;
+  } else {
+    el.innerHTML = '<div class="foot-row"><button type="button" class="link" id="org-open">Organiser sign-in</button></div>';
+  }
+}
+async function copyLink(text, what){
+  try { await navigator.clipboard.writeText(text); S.linkFallback = ''; renderFoot(); flash(`${what} copied.`); }
+  catch (e) {
+    S.linkFallback = text; renderFoot();
+    const b = $('#link-box'); if (b){ b.focus(); b.select(); }
+  }
+}
+async function orgSignIn(){
+  const raw = (($('#org-key') || {}).value || '').trim();
+  const m = raw.match(/admin=([A-Za-z0-9_-]{16,128})/);
+  const k = m ? m[1] : raw;
+  if (!/^[A-Za-z0-9_-]{16,128}$/.test(k)){ S.footMsg = 'Paste the full organiser link or key.'; S.footSig = ''; renderFoot(); return; }
+  S.key = k;
+  await refresh(true);
+  if (S.admin){ store.set('gclub.admin', k); S.orgForm = false; S.footMsg = ''; S.footSig = ''; renderAll(); flash('Signed in as organiser.'); }
+  else { S.footMsg = 'That key did not match.'; S.footSig = ''; renderFoot(); }
+}
+async function orgSignOut(){
+  S.key = ''; store.set('gclub.admin', '');
+  S.setupOpen = false;
+  await refresh(true);
+  renderSetup(); renderAll();
+}
+function captureKey(){
+  const m = location.hash.match(/admin=([A-Za-z0-9_-]{16,128})/);
+  if (m){
+    S.key = m[1];
+    store.set('gclub.admin', S.key);
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+  } else {
+    S.key = store.get('gclub.admin') || '';
+  }
+}
+
+/* ---------- data loading ---------- */
+let refreshing = null;
+function applyData(data){
+  S.missing = data === null;
+  if (data){
+    S.cfg = data.config || null;
+    S.people = (data.people || []).map(p => ({id:p.id, name:p.name, answers:p.answers || {}, note:p.note || '', updatedAt:Number(p.updatedAt) || 0}));
+    S.admin = !!data.admin;
+    if (S.key && !data.admin){ S.key = ''; store.set('gclub.admin', ''); }
+    if (S.me.saving){
+      const mine = S.people.find(p => p.id === S.me.id);
+      if (mine) S.me.loadedAt = mine.updatedAt;
+    }
+  } else { S.cfg = null; S.people = []; S.admin = false; }
+  S.cfgReady = true; S.peopleReady = true; S.loaded = true;
+}
+async function refresh(force){
+  if (refreshing && !force) return refreshing;
+  const run = (async () => {
+    try {
+      const data = await rpc('gc_get', {p_event:CFG.event, p_admin:S.key || null});
+      const wasBad = S.offline || !!S.err;
+      S.offline = false; S.err = '';
+      const sig = JSON.stringify(data);
+      if (!force && !wasBad && sig === S.lastSig && S.loaded) return;
+      S.lastSig = sig;
+      applyData(data);
+      renderAll();
+    } catch (e) {
+      if (!S.loaded) S.offline = true; else S.err = 'Connection lost. Showing the last replies we received.';
+      renderBanner(); renderHero();
+    }
+  })();
+  refreshing = run;
+  try { await run; } finally { if (refreshing === run) refreshing = null; }
+}
+function renderAll(){
+  renderHero(); renderBanner(); renderEmpty(); renderBest(); renderResults(); syncReply(); renderFoot();
+  if (S.admin && S.cfgReady && !S.missing && !cfgDates().length && !S.setupOpen && !S.setupTouched) openSetup(true);
+}
+async function boot(){
+  captureKey();
+  if (!CONFIGURED){ S.unconfigured = true; renderAll(); return; }
+  renderAll();
+  await refresh(true);
+  setInterval(() => { if (!document.hidden) refresh(); }, 20000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  const t = e.target;
+  if (!(t instanceof Element)) return;
+  let el;
+  if (t.closest('#edit-setup')) return openSetup(false);
+  if (t.closest('#copy-member')) return copyLink(memberLink(), 'Member link');
+  if (t.closest('#copy-admin')) return copyLink(memberLink() + '#admin=' + S.key, 'Organiser link');
+  if (t.closest('#org-open')){ S.orgForm = true; S.footMsg = ''; S.footSig = ''; renderFoot(); const k = $('#org-key'); if (k) k.focus(); return; }
+  if (t.closest('#org-cancel')){ S.orgForm = false; S.footMsg = ''; S.footSig = ''; return renderFoot(); }
+  if (t.closest('#org-go')) return orgSignIn();
+  if (t.closest('#org-out')) return orgSignOut();
+  if ((el = t.closest('#reply .chip'))) return selectPerson(el.dataset.name);
+  if ((el = t.closest('#rows .seg button'))) return setAnswer(el);
+  if ((el = t.closest('[data-bulk]'))) return bulk(el.dataset.bulk);
+  if (t.closest('#save')) return saveReply();
+  if ((el = t.closest('#del'))) return delReply(el);
+  if ((el = t.closest('[data-edit]'))) return editPerson(el.dataset.edit);
+  if ((el = t.closest('[data-lock]'))) return lockDate(el.dataset.lock);
+  if (t.closest('#copy')) return copySummary();
+  if ((el = t.closest('#cal [data-d]'))) return toggleDay(el.dataset.d);
+  if ((el = t.closest('#cal [data-nav]'))) return navCal(Number(el.dataset.nav));
+  if ((el = t.closest('#picked [data-rm]'))) return toggleDay(el.dataset.rm);
+  if (t.closest('#s-save')) return saveCfg();
+  if (t.closest('#s-cancel')) return closeSetup();
+});
+const DRAFT_KEYS = {'s-title':'title', 's-blurb':'blurb', 's-when':'when', 's-where':'where', 's-roster':'roster'};
+document.addEventListener('input', e => {
+  const t = e.target, id = t && t.id;
+  if (id === 'who') S.me.name = t.value.slice(0, 40);
+  else if (id === 'note'){ S.me.note = t.value; S.me.dirty = true; }
+  else if (DRAFT_KEYS[id] && S.draft) S.draft[DRAFT_KEYS[id]] = t.value;
+});
+document.addEventListener('change', e => { if (e.target && e.target.id === 'who') nameCommitted(e.target); });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'org-key'){ e.preventDefault(); orgSignIn(); } });
+
+boot();
+})();
+</script>
+</body>
+</html>
